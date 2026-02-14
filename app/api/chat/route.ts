@@ -8,24 +8,21 @@ export async function POST(req: Request) {
     const { prompt } = await req.json();
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // Define the Board
-    const boardRoles = [
-      { name: "CMO (Marketing)", focus: "Virality and acquisition." },
-      { name: "CPO (Product)", focus: "Features and MVP build." },
-      { name: "CFO (Finance)", focus: "Budget and revenue." }
+    const roles = [
+      { name: "CMO", task: "Marketing and Growth" },
+      { name: "CPO", task: "Product and MVP features" },
+      { name: "CFO", task: "Revenue and Pricing" }
     ];
 
-    // Parallel Board Meeting
     const boardResponses = await Promise.all(
-      boardRoles.map(async (role) => {
-        const result = await model.generateContent(`Role: ${role.name}. Analyze this Idea: ${prompt}`);
+      roles.map(async (role) => {
+        const result = await model.generateContent(`Role: ${role.name}. Task: ${role.task}. Analyze: ${prompt}`);
         return { role: role.name, feedback: result.response.text() };
       })
     );
 
-    // Architect Synthesis
     const architectResult = await model.generateContent(
-      `You are the Lead Business Architect. Create a master 5-step execution plan based on these notes: ${JSON.stringify(boardResponses)}`
+      `Summarize these board notes into a 5-step master plan: ${JSON.stringify(boardResponses)}`
     );
 
     return NextResponse.json({
@@ -33,7 +30,7 @@ export async function POST(req: Request) {
       board: boardResponses
     });
 
-  } catch (error) {
-    return NextResponse.json({ error: "System Offline" }, { status: 500 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
